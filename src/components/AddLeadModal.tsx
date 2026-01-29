@@ -16,10 +16,12 @@ const AddLeadModal = ({ onClose, onSuccess }: Props) => {
         nextActivityDate: ''
     });
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setError(null);
         try {
             const res = await fetch('/api/leads', {
                 method: 'POST',
@@ -29,12 +31,17 @@ const AddLeadModal = ({ onClose, onSuccess }: Props) => {
                     amount: parseFloat(formData.amount)
                 })
             });
+
             if (res.ok) {
                 onSuccess();
                 onClose();
+            } else {
+                const data = await res.json();
+                setError(data.error || 'Failed to add lead. Please check your connection.');
             }
-        } catch (error) {
-            console.error('Failed to add lead:', error);
+        } catch (err) {
+            console.error('Failed to add lead:', err);
+            setError('Something went wrong. Please try again later.');
         } finally {
             setLoading(false);
         }
@@ -59,6 +66,11 @@ const AddLeadModal = ({ onClose, onSuccess }: Props) => {
                     <button onClick={onClose}><X size={20} /></button>
                 </div>
                 <form onSubmit={handleSubmit} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    {error && (
+                        <div style={{ padding: '10px', background: '#ffebee', color: '#d32f2f', borderRadius: '4px', fontSize: '13px' }}>
+                            {error}
+                        </div>
+                    )}
                     <div>
                         <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px' }}>Sale Name *</label>
                         <input
