@@ -18,6 +18,8 @@ const SalesTable = ({ refreshTrigger }: { refreshTrigger: number }) => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [activeTab, setActiveTab] = useState('Sales');
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [deleting, setDeleting] = useState(false);
 
     const fetchLeads = async () => {
         setLoading(true);
@@ -26,6 +28,7 @@ const SalesTable = ({ refreshTrigger }: { refreshTrigger: number }) => {
             const data = await res.json();
             setLeads(data.leads || []);
             setTotalPages(data.pagination?.pages || 1);
+            setSelectedIds([]); // Reset selection on page change or refresh
         } catch (error) {
             console.error('Failed to fetch:', error);
         } finally {
@@ -46,6 +49,39 @@ const SalesTable = ({ refreshTrigger }: { refreshTrigger: number }) => {
             case 'lost': return 'badge-lost';
             case 'stalled': return 'badge-stalled';
             default: return '';
+        }
+    };
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedIds(leads.map(l => l._id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectOne = (id: string) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const handleDelete = async () => {
+        if (selectedIds.length === 0) return;
+        if (!confirm(`Are you sure you want to delete ${selectedIds.length} lead(s)?`)) return;
+
+        setDeleting(true);
+        try {
+            // Sequential delete for simplicity, or we could add a bulk endpoint
+            for (const id of selectedIds) {
+                await fetch(`/api/leads/${id}`, { method: 'DELETE' });
+            }
+            fetchLeads();
+        } catch (error) {
+            console.error('Delete failed:', error);
+            alert('Failed to delete some items.');
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -77,7 +113,13 @@ const SalesTable = ({ refreshTrigger }: { refreshTrigger: number }) => {
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                             <thead>
                                 <tr style={{ background: '#f8f9fa', borderBottom: '1px solid #eee' }}>
-                                    <th style={{ padding: '12px', width: '40px' }}><input type="checkbox" /></th>
+                                    <th style={{ padding: '12px', width: '40px' }}>
+                                        <input
+                                            type="checkbox"
+                                            onChange={handleSelectAll}
+                                            checked={leads.length > 0 && selectedIds.length === leads.length}
+                                        />
+                                    </th>
                                     <th style={{ padding: '12px', fontSize: '13px', fontWeight: '500', color: '#666' }}>Status</th>
                                     <th style={{ padding: '12px', fontSize: '13px', fontWeight: '500', color: '#666' }}>Sale date</th>
                                     <th style={{ padding: '12px', fontSize: '13px', fontWeight: '500', color: '#666' }}>Amount</th>
@@ -88,12 +130,18 @@ const SalesTable = ({ refreshTrigger }: { refreshTrigger: number }) => {
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan={7} style={{ textAlign: 'center', padding: '20px' }}>Loading...</td></tr>
+                                    <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>Loading...</td></tr>
                                 ) : leads.length === 0 ? (
-                                    <tr><td colSpan={7} style={{ textAlign: 'center', padding: '20px' }}>No records found.</td></tr>
+                                    <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>No records found.</td></tr>
                                 ) : leads.map((lead) => (
-                                    <tr key={lead._id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                                        <td style={{ padding: '12px' }}><input type="checkbox" /></td>
+                                    <tr key={lead._id} style={{ borderBottom: '1px solid #f0f0f0', background: selectedIds.includes(lead._id) ? '#f0f7f6' : 'transparent' }}>
+                                        <td style={{ padding: '12px' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.includes(lead._id)}
+                                                onChange={() => handleSelectOne(lead._id)}
+                                            />
+                                        </td>
                                         <td style={{ padding: '12px' }}>
                                             <span className={`badge ${getStatusBadgeClass(lead.status)}`}>
                                                 {lead.status === 'Open' ? `€ ${lead.status}` : lead.status}
@@ -112,8 +160,12 @@ const SalesTable = ({ refreshTrigger }: { refreshTrigger: number }) => {
 
                     <div style={{ padding: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff' }}>
                         <div style={{ display: 'flex', gap: '10px' }}>
-                            <button style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', color: '#666' }}>
-                                <Trash2 size={16} /> Delete
+                            <button
+                                onClick={handleDelete}
+                                disabled={selectedIds.length === 0 || deleting}
+                                style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', color: '#666', opacity: selectedIds.length > 0 ? 1 : 0.5, cursor: selectedIds.length > 0 ? 'pointer' : 'default' }}
+                            >
+                                <Trash2 size={16} /> {deleting ? 'Deleting...' : 'Delete'}
                             </button>
                             <button style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', color: '#666' }}>
                                 <Filter size={16} /> Filter
