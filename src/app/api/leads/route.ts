@@ -34,8 +34,17 @@ export async function POST(request: Request) {
 
         // Basic validation
         const { saleName, amount, stage, nextActivityDate } = body;
-        if (!saleName || !amount || !stage || !nextActivityDate) {
+        if (!saleName || amount === undefined || !stage || !nextActivityDate) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        if (amount < 0) {
+            return NextResponse.json({ error: 'Amount cannot be negative' }, { status: 400 });
+        }
+
+        const selectedDate = new Date(nextActivityDate);
+        if (isNaN(selectedDate.getTime())) {
+            return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
         }
 
         const lead = await Lead.create(body);

@@ -13,7 +13,7 @@ const LeadSchema: Schema = new Schema({
     saleName: { type: String, required: true },
     status: { type: String, enum: ['Open', 'Lost', 'Sold', 'Stalled'], default: 'Open' },
     saleDate: { type: Date, default: Date.now },
-    amount: { type: Number, required: true },
+    amount: { type: Number, required: true, min: 0 },
     stage: { type: String, required: true },
     nextActivityDate: { type: Date, required: true },
 }, { timestamps: true });

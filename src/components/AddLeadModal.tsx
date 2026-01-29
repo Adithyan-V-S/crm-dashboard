@@ -22,13 +22,29 @@ const AddLeadModal = ({ onClose, onSuccess }: Props) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        const amount = parseFloat(formData.amount);
+        if (amount < 0) {
+            setError('Amount cannot be negative.');
+            setLoading(false);
+            return;
+        }
+
+        const selectedDate = new Date(formData.nextActivityDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (selectedDate < today) {
+            setError('Next Activity Date cannot be in the past.');
+            setLoading(false);
+            return;
+        }
+
         try {
             const res = await fetch('/api/leads', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...formData,
-                    amount: parseFloat(formData.amount)
+                    amount
                 })
             });
 
@@ -100,6 +116,7 @@ const AddLeadModal = ({ onClose, onSuccess }: Props) => {
                         <input
                             required
                             type="number"
+                            min="0"
                             className="input"
                             style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }}
                             value={formData.amount}
