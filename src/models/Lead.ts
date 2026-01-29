@@ -14,7 +14,7 @@ const LeadSchema: Schema = new Schema({
     status: { type: String, enum: ['Open', 'Lost', 'Sold', 'Stalled'], default: 'Open' },
     saleDate: { type: Date, default: Date.now },
     amount: { type: Number, required: true, min: 0 },
-    stage: { type: String, required: true },
+    stage: { type: String, required: true, trim: true, minlength: 3 },
     nextActivityDate: { type: Date, required: true },
 }, { timestamps: true });
 

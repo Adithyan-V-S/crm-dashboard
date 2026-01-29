@@ -47,6 +47,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
         }
 
+        if (stage.trim().length < 3) {
+            return NextResponse.json({ error: 'Stage name must be at least 3 characters' }, { status: 400 });
+        }
+
         const lead = await Lead.create(body);
         return NextResponse.json(lead, { status: 201 });
     } catch (error) {

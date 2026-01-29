@@ -38,6 +38,12 @@ const AddLeadModal = ({ onClose, onSuccess }: Props) => {
             return;
         }
 
+        if (formData.stage.trim().length < 3) {
+            setError('Stage name must be at least 3 characters long.');
+            setLoading(false);
+            return;
+        }
+
         try {
             const res = await fetch('/api/leads', {
                 method: 'POST',
@@ -127,6 +133,7 @@ const AddLeadModal = ({ onClose, onSuccess }: Props) => {
                         <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px' }}>Stage *</label>
                         <input
                             required
+                            minLength={3}
                             placeholder="e.g. Proposal (60%)"
                             className="input"
                             style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }}
